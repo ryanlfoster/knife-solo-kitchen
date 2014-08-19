@@ -1,0 +1,30 @@
+{
+    "run_list": [
+		"recipe[mysql::client]",
+		"recipe[database::mysql]",
+		"recipe[mysql::server]",
+		"recipe[zabbix]",
+		"recipe[zabbix::database]",
+		"recipe[zabbix::server]",
+		"recipe[zabbix::web]"
+    ],
+	"zabbix": {
+        "database" : {
+          "dbpassword" : "password"
+        },
+        "agent" : {
+          "servers" : [
+          	"10.1.1.1"
+          ]
+        },
+        "server" : {
+          "version" : "2.2.5",
+          "name" : "10.1.1.1"
+        }
+  },
+  "mysql": {
+  	"server_debian_password": "ilikerandompasswords",
+  	"server_root_password": "ilikerandompasswords",
+  	"server_repl_password": "ilikerandompasswords"
+  }
+}

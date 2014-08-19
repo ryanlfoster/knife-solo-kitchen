@@ -1,0 +1,106 @@
+# This is a basic VCL configuration file for varnish.  See the vcl(7)
+# man page for details on VCL syntax and semantics.
+
+# Uncomment for logging
+# import std;
+
+# Default backend definition.  Set this to point to your content
+# server.
+#
+backend apps_webserver {
+    .host = "<%= @wgc[:origin_host] %>";
+    .port = "<%= @wgc[:origin_http_port] %>";
+}
+
+backend ssl_webserver {
+    .host = "<%= @wgc[:origin_host] %>";
+    .port = "<%= @wgc[:origin_http_port_for_ssl] %>";
+}
+
+# Receive
+sub vcl_recv {
+	if (req.http.x-forwarded-proto == "https") {
+	    set req.backend = ssl_webserver;
+	} else {
+		set req.backend = apps_webserver;	
+	}
+    set req.grace = <%= @wgc[:varnish_grace] %>;
+
+    if (req.restarts == 0) {
+        if (req.http.x-forwarded-for) {
+            set req.http.X-Forwarded-For =
+                req.http.X-Forwarded-For + ", " + client.ip;
+        } else {
+            set req.http.X-Forwarded-For = client.ip;
+        }
+    }
+    if (req.request != "GET" &&
+      req.request != "HEAD" &&
+      req.request != "PUT" &&
+      req.request != "POST" &&
+      req.request != "TRACE" &&
+      req.request != "OPTIONS" &&
+      req.request != "DELETE") {
+        /* Non-RFC2616 or CONNECT which is weird. */
+        return (pipe);
+    }
+    if (req.request != "GET" && req.request != "HEAD") {
+        /* We only deal with GET and HEAD by default */
+        return (pass);
+    }
+    if (req.http.Authorization) {
+        /* Not cacheable by default */
+        return (pass);
+    }
+    return (lookup);
+}
+
+## Fetch
+sub vcl_fetch {
+    ## Remove the X-Forwarded-For header if it exists.
+    remove req.http.X-Forwarded-For;
+
+    ## insert the client IP address as X-Forwarded-For. This is the normal IP address of the user.
+    set req.http.X-Forwarded-For = req.http.rlnclientipaddr;
+	
+    ## Added security, the "w00tw00t" attacks are pretty annoying so lets block it before it reaches our webserver
+    if (req.url ~ "^/w00tw00t") {
+        error 403 "Not permitted";
+    }
+	
+	# set cache timeout value
+    if (beresp.ttl < <%= @wgc[:varnish_cache_ttl] %>) {
+       set beresp.ttl = <%= @wgc[:varnish_cache_ttl] %>;
+    }
+
+	# enable saint mode, keep serving sale content on error
+    if (beresp.status == 404 || beresp.status == 503) {
+      set beresp.saintmode = <%= @wgc[:varnish_saint_grace] %>;
+      if (req.request != "POST") {
+           return(restart);
+      } else {
+           error beresp.status "Failed";
+      }
+    }
+
+	# allow serving of stale objects while new version is fetched
+    set beresp.grace = <%= @wgc[:varnish_grace] %>;
+	
+	# remove cookies
+    remove beresp.http.Set-Cookie;
+
+    ## Deliver the content
+    return(deliver);
+}
+
+## Deliver
+sub vcl_deliver {
+    ## We'll be hiding some headers added by Varnish. We want to make sure people are not seeing we're using Varnish.
+    ## Since we're not caching (yet), why bother telling people we use it?
+
+    remove resp.http.X-Varnish;
+    remove resp.http.Via;
+    remove resp.http.Age;
+    ## We'd like to hide the X-Powered-By headers. Nobody has to know we can run PHP and have version xyz of it.
+    remove resp.http.X-Powered-By;
+}

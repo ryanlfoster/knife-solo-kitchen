@@ -1,0 +1,3 @@
+UPDATE wp_options SET option_value = '<%= node['howto']['wp']['template'] %>' WHERE option_name = 'template';
+UPDATE wp_options SET option_value = '<%= node['howto']['wp']['stylesheet'] %>' WHERE option_name = 'stylesheet';
+UPDATE wp_options SET option_value = '<%= node['howto']['wp']['current_theme']%>' WHERE option_name = 'current_theme';

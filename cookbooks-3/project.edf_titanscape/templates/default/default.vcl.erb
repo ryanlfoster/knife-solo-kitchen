@@ -1,0 +1,30 @@
+# This is a basic VCL configuration file for varnish.  See the vcl(7)
+# man page for details on VCL syntax and semantics.
+
+# Uncomment for logging
+# import std;
+
+
+# Default backend definition.  Set this to point to your content
+# server.
+#
+backend wwwedfecom_webserver {
+    .host = "195.59.168.10";
+    .port = "80";
+}
+
+backend localsinatra_webserver {
+    .host = "127.0.0.1";
+    .port = "4567";
+}
+
+# Receive
+sub vcl_recv {
+    set req.http.x-host = req.http.host;
+    set req.http.x-url = req.url;
+    if (req.url ~ "^/products-services/for-your-home/smart-metering/") {
+        set req.backend = localsinatra_webserver;
+    } else {
+        set req.backend = wwwedfecom_webserver;
+    }
+}

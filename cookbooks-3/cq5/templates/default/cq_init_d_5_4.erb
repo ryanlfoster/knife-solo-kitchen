@@ -1,0 +1,25 @@
+#! /bin/sh
+
+SLING_RUN_MODES="<%= @sling_run_modes %>"
+
+case "$1" in
+status)
+started=`<%= @installation_path %>/serverctl status | grep -E 'is running' | wc -l`
+if [ $started != 1 ]; then
+        echo "CQ not started"
+        exit 1
+else
+        echo "CQ is started"
+        exit 0:
+fi
+;;
+*)
+<%= @installation_path %>/serverctl --javaopts "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=16969 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dsling.run.modes=${SLING_RUN_MODES}" --heap-min <%= @min_heap %>  --heap-max <%= @max_heap %> --permgen <%= @perm_gen %>   $*
+RETVAL=$?
+
+if [ $RETVAL = 4 ] && [ $1 = "start" ]; then
+        # workaround to keep chef happy
+        exit 0;
+fi
+;;
+esac

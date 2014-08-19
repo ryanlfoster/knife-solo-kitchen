@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE server PUBLIC "-//Day Software AG//DTD J2EE Server 3.0//EN" "http://www.day.com/dtds/server_3_0.dtd">
+
+<!--
+This is the quickstart-base server.xml, meant to
+be replaced (or later dynamically modified) in specific
+quickstart instances.
+-->
+
+<server>
+<servletengine>
+<admin>
+<crypt>adpexzg3FUZAk</crypt>
+</admin>
+<container>
+<listener>
+<bind-address>0.0.0.0</bind-address>
+<bind-port>7402</bind-port>
+<max-threads>128</max-threads>
+</listener>
+
+<!--
+Generated with keytool -genkey -alias cq -keyalg RSA -keystore ssl_keystore -validity 3600
+-->
+<listener>
+    <bind-port>8443</bind-port>
+    <ssl>
+        <protocol>SSL</protocol>
+        <key-store>
+            <name>etc/ssl_keystore</name>
+            <passphrase>password</passphrase>
+        </key-store>
+        <key>
+            <alias>cq</alias>
+            <password>password</password>
+        </key>
+    </ssl>		
+</listener>
+
+
+<!-- webapp webapps/crx-explorer_crx.war added by com.day.crx.quickstart.ServerXmlProcessor -->
+<web-app>
+<context>/crx</context>
+<path>webapps/crx-explorer_crx.war</path>
+<run-on-startup>true</run-on-startup>
+</web-app>
+<!-- webapp webapps/crx-launchpad.war added by com.day.crx.quickstart.ServerXmlProcessor -->
+<web-app>
+<context>/</context>
+<path>webapps/crx-launchpad.war</path>
+<run-on-startup>true</run-on-startup>
+</web-app>
+
+<log-file>
+<log-file-name>logs/access.log</log-file-name>
+</log-file>
+</container>
+</servletengine>
+<log-file>
+<log-file-name>../logs/server.log</log-file-name>
+</log-file>
+<log-level>WARN</log-level>
+</server>
+
